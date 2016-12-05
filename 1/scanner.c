@@ -61,6 +61,10 @@ char *reserved_table[] = {
     "begin", "end", "read", "write", "function"
 };
 
+void write_token(char *s, int lineno) {
+    
+}
+
 void analytics_line(char *line, int lineno) {
     printf("%d: %s", lineno, line);
     char tmp[MAX_LINE];
