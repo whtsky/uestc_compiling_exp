@@ -5,12 +5,26 @@
 #define MAX_LINE 1024
 
 enum Token {
-    T_BEGIN = 1, T_END,
-    T_INTEGER, T_FUNCTION,
     T_SYMBOL = 11,
     T_EOL = 27,
     T_EOF = 28
 };
+
+char *reserved_table[] = {
+    "", "begin", "end", "integer", "function",
+    "read", "write", "if", "then", "else",
+};
+
+
+int is_reserved_token(const char *s) {
+    for(int i=1; i<10; i++) {
+        // Todo: Hard coded reserved table length
+        if (strcmp(reserved_table[i], s) == 0) {
+            return i;
+        }
+    }
+    return 0;
+}
 
 FILE *error_file;
 FILE *lex_file;
@@ -55,11 +69,6 @@ Symble add_symble(char *s, int lineno) {
     }
     return NULL;
 }
-
-char *reserved_table[] = {
-    "integer", "if", "then", "else",
-    "begin", "end", "read", "write", "function"
-};
 
 void write_token(char *s, int lineno) {
     
