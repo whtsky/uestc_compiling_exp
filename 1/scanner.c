@@ -1,22 +1,47 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#define MAX_LINE 1024
 
-enum Token {
-    T_END=-1,
-    T_ERROR=0,
-    T_SYMBOL=1,
-    T_CONSTANT, T_INTEGER, T_IF, T_THEN, T_ELSE,
-    T_BEGIN, T_END, T_READ, T_WRITE, T_FUNCTION,
-    T_ASSIGN, T_L, T_LE, T_G, T_GE,
-    T_ADD, T_SUB, T_MUL, T_DIV,
-    T_E, T_NE
-};
+FILE *error_file;
+FILE *lex_file;
+FILE *symtab1e_file;
 
-struct symTableItem{
-    char   name[MAX_ID_LENGTH];
-    Token  lexToken;
-    int    type;
-    bool  init;
+void write_error(const char *s) {
+    fprintf(stdout, "%s", s);
+    fprintf(error_file, "%s", s);
+}
+
+void write_lex(const char *s) {
+    fprintf(stdout, "%s", s);
+    fprintf(lex_file, "%s", s);
+}
+
+void write_sym(const char *s) {
+    fprintf(stdout, "%s", s);
+    fprintf(symtab1e_file, "%s", s);
+}
+
+typedef struct {
+    char name[MAX_LINE];
+    int lineno;
+} *Symble;
+
+Symble symbles[MAX_LINE];
+
+void add_symble(char *s, int lineno) {
+    for(int i=0; i<MAX_LINE; i++) {
+        if (symbles[i] == NULL) {
+            symbles[i] = malloc(sizeof(Symble));
+            symbles[i]->lineno = lineno;
+            strcpy(symbles[i]->name, s);
+            return;
+        }
+        if (strcmp(symbles[i]->name, s) == 0) {
+            return;
+        }
+    }
 }
 
 char *reserved_table[] = {
@@ -24,34 +49,49 @@ char *reserved_table[] = {
     "begin", "end", "read", "write", "function"
 };
 
-int ScanOneToken(FILE *fp){
-    int ch = getc(fp); 
-        switch(ch) {
-        case 'a': case 'b': case 'c': 
-            ;
-        case '0': case '1': case '2': case '3': 									//.... and other digits
-        case ‘/‘:		//除号？注释？
-        //case ...:
-        case EOF:
-            return T_END;
-        default:	//错误处理
-            return T_ERROR;
-    }
+void analytics_line(char *line, int lineno) {
+    printf("%d: %s", lineno, line);
+    char tmp[MAX_LINE];
+
 }
 
 
 int main(void){
-    FILE* f = fopen("source.txt", "r");
-    if (f == NULL) {
+    FILE *f = fopen("source.txt", "r");
+    lex_file = fopen("lex.txt", "w");
+    symtab1e_file = fopen("symtab1e.txt", "w");
+    error_file = fopen("error.txt", "w");
+    if (f == NULL || lex_file == NULL || symtab1e_file == NULL || error_file == NULL) {
         exit(EXIT_FAILURE);
     }
-    
+    write_lex("吴昊天-2015220201015\n");
+
     int lineno = 0;
     char *line = NULL;
     size_t len = 0;
-    while()
+    while(getline(&line, &len, f) != -1) {
+        write_lex("\n");
+        analytics_line(line, ++lineno);
+    }
+    free(line);
+    fclose(f);
     
-    while (ScanOneToken(f) != T_END)
-        ; // 处理各个单词符号
+    char tmp[MAX_LINE];
+
+    add_symble("233", 50);
+    add_symble("233", 100);
+    add_symble("yes!", 2);
+
+    // Write symbles
+    write_sym("符号表\n");
+    write_sym("编号\t行号\t名称\n");
+    for(int i=0; i < MAX_LINE; i++) {
+        if(symbles[i] == NULL) {
+            break;
+        }
+        sprintf(tmp, "%d\t%d\t%s\n", i+1, symbles[i]->lineno, symbles[i]->name);
+        write_sym(tmp);
+    }
+
     return 0;
 }

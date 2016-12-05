@@ -2,3 +2,5 @@ error.txt
 lex.txt
 # ????
 symtab1e.txt 
+
+*.out
