@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 #define MAX_LINE 1024
 
@@ -33,6 +35,23 @@ int is_operator(char *s) {
         }
     }
     return 0;
+}
+
+bool is_operator_token(char ch) {
+    switch(ch) {
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+        case '<':
+        case '=':
+        case '>':
+        case '!':
+        case ':':
+            return true;
+        default:
+            return false;
+    }
 }
 
 int is_reserved_token(char *s) {
@@ -110,31 +129,69 @@ void write_token(char *s, int lineno) {
         sprintf(tmp, "line %2d: (%d, 0) 操作符： %s\n", lineno, token, s);
     } else {
         Symble t = add_symble(s, lineno);
-        sprintf(tmp, "line %2d: (%d, %d) 标识符： %s\n", lineno, token, t->lineno, s);
+        sprintf(tmp, "line %2d: (%d, %d) 标识符：%s\n", lineno, T_SYMBOL, t->lineno, s);
     }
     write_lex(tmp);
 }
 
+bool valid_token(char ch) {
+    if (isalnum(ch)) {
+        return true;
+    }
+    return ch == '_';
+}
+
 void analytics_line(char *line, int lineno) {
-    char ch, tmp[MAX_LINE];
-    int i = 0, token;
+    char ch, tmp[MAX_LINE], token_string[MAX_LINE];
+    int token;
     while((ch = *(line++)) != '\n') {
-        if (((token = is_sep_token(ch)) != 0) || ch == ' ') {
-            if (i != 0) {
-                tmp[i] = '\0';
-                write_token(tmp, lineno);
-                i = 0;
+        if (isalpha(ch)) {
+            // 符号
+            int i = 0;
+            token_string[i++] = ch;
+            while(valid_token(*line)) {
+                token_string[i++] = *(line++);
             }
+            token_string[i] = '\0';
+            write_token(token_string, lineno);
+        } else if (isdigit(ch)) {
+            // 数字
+            int num = ch - '0';
+            while(isdigit(*(line + 1))) {
+                num = num * 10 + (*(line++) - '0');
+            }
+            sprintf(tmp, "line %2d: (%d, 0) 常数： %d\n", lineno, T_CONST, num);
+            write_lex(tmp);
+        } else if (is_operator_token(ch)) {
+            int i = 0;
+            token_string[i++] = ch;
+            while(is_operator_token(*line)) {
+                token_string[i++] = *(line++);
+            }
+            token_string[i] = '\0';
+            if ((token = is_operator(token_string)) != 0) {
+                sprintf(tmp, "line %2d: (%d, 0) 运算符 %s\n", lineno, token, token_string);
+                write_lex(tmp);
+            } else {
+                sprintf(tmp, "line %2d: 词法错误： %c\n", lineno, ch);
+                write_error(tmp);
+            }
+        } else if (((token = is_sep_token(ch)) != 0) || ch == ' ') {
+            // 界符，空格
             if (token != 0) {
                 sprintf(tmp, "line %2d: (%d, 0) 界符： %c\n", lineno, token, ch);
                 write_lex(tmp);
             }
+        } else if (ch == '\n' || ch == '\r') {
+            // Windows 下的换行符是 \n\r ，所以我们可以 ignore \r
+            sprintf(tmp, "line %2d: (%d, 0) 行尾符： \n", lineno, T_EOL);
+            write_lex(tmp);
+            return;
         } else {
-            tmp[i++] = ch;
+            sprintf(tmp, "line %2d: 词法错误： %c(ASCII: %d)\n", lineno, ch, ch);
+            write_error(tmp);
         }
     }
-    sprintf(tmp, "line %2d: (%d, 0) 行尾符： \n", lineno, T_EOL);
-    write_lex(tmp);
 }
 
 
@@ -161,10 +218,6 @@ int main(void){
 
     free(line);
     fclose(f);
-
-    add_symble("233", 50);
-    add_symble("233", 100);
-    add_symble("yes!", 2);
 
     // Write symbles
     write_sym("符号表\n");
