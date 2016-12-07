@@ -49,7 +49,8 @@ typedef struct {
     int id;
     char name[MAX_LINE];
     int lineno;
-} *Symble;
+} SymbleToken;
+typedef SymbleToken *Symble;
 
 Symble symbles[MAX_LINE];
 
@@ -57,7 +58,7 @@ Symble symbles[MAX_LINE];
 Symble add_symble(char *s, int lineno) {
     for(int i=0; i<MAX_LINE; i++) {
         if (symbles[i] == NULL) {
-            symbles[i] = malloc(sizeof(Symble));
+            symbles[i] = malloc(sizeof(SymbleToken));
             symbles[i]->id = i+1;
             symbles[i]->lineno = lineno;
             strcpy(symbles[i]->name, s);
@@ -103,7 +104,6 @@ int main(void){
 
     free(line);
     fclose(f);
-    
 
     add_symble("233", 50);
     add_symble("233", 100);
