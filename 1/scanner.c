@@ -6,17 +6,36 @@
 
 enum Token {
     T_SYMBOL = 11,
-    T_EOL = 27,
-    T_EOF = 28
+    T_CONST,
+
+    T_LEFT_BRACKET = 24,
+    T_RIGHT_BRACKET,
+    T_SEMICOLON,
+    T_EOL,
+    T_EOF
 };
+
+char *operator_table[] = {
+    "+", "-", "*", "/",
+    "<", "<=", ">", ">=",
+    "==", "!=", ":="
+}; // length = 11
 
 char *reserved_table[] = {
     "", "begin", "end", "integer", "function",
     "read", "write", "if", "then", "else",
 };
 
+int is_operator(char *s) {
+    for(int i=0; i<11; i++) {
+        if (strcmp(operator_table[i], s) == 0) {
+            return i + 13;
+        }
+    }
+    return 0;
+}
 
-int is_reserved_token(const char *s) {
+int is_reserved_token(char *s) {
     for(int i=1; i<10; i++) {
         // Todo: Hard coded reserved table length
         if (strcmp(reserved_table[i], s) == 0) {
@@ -24,6 +43,15 @@ int is_reserved_token(const char *s) {
         }
     }
     return 0;
+}
+
+int is_sep_token(char ch) {
+    switch(ch) {
+        case '(': return T_LEFT_BRACKET;
+        case ')': return T_RIGHT_BRACKET;
+        case ';': return T_SEMICOLON;
+        default: return 0;
+    }
 }
 
 FILE *error_file;
@@ -72,12 +100,41 @@ Symble add_symble(char *s, int lineno) {
 }
 
 void write_token(char *s, int lineno) {
-    
+//    printf("\nToken:\n%s\nEndToken\n", s);
+    char tmp[MAX_LINE];
+    int token;
+//    printf("Token:\n%s\n", s);
+    if ((token = is_reserved_token(s)) != 0) {
+        sprintf(tmp, "line %2d: (%d, 0) 保留字： %s\n", lineno, token, s);
+    } else if ((token = is_operator(s)) != 0) {
+        sprintf(tmp, "line %2d: (%d, 0) 操作符： %s\n", lineno, token, s);
+    } else {
+        Symble t = add_symble(s, lineno);
+        sprintf(tmp, "line %2d: (%d, %d) 标识符： %s\n", lineno, token, t->lineno, s);
+    }
+    write_lex(tmp);
 }
 
 void analytics_line(char *line, int lineno) {
-    printf("%d: %s", lineno, line);
-    char tmp[MAX_LINE];
+    char ch, tmp[MAX_LINE];
+    int i = 0, token;
+    while((ch = *(line++)) != '\n') {
+        if (((token = is_sep_token(ch)) != 0) || ch == ' ') {
+            if (i != 0) {
+                tmp[i] = '\0';
+                write_token(tmp, lineno);
+                i = 0;
+            }
+            if (token != 0) {
+                sprintf(tmp, "line %2d: (%d, 0) 界符： %c\n", lineno, token, ch);
+                write_lex(tmp);
+            }
+        } else {
+            tmp[i++] = ch;
+        }
+    }
+    sprintf(tmp, "line %2d: (%d, 0) 行尾符： \n", lineno, T_EOL);
+    write_lex(tmp);
 }
 
 
