@@ -157,7 +157,7 @@ void analytics_line(char *line, int lineno) {
         } else if (isdigit(ch)) {
             // 数字
             int num = ch - '0';
-            while(isdigit(*(line + 1))) {
+            while(isdigit(*line)) {
                 num = num * 10 + (*(line++) - '0');
             }
             sprintf(tmp, "line %2d: (%d, 0) 常数： %d\n", lineno, T_CONST, num);
